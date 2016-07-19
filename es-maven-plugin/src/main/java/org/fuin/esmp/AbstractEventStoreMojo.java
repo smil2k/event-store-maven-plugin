@@ -31,6 +31,7 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -226,7 +227,7 @@ public abstract class AbstractEventStoreMojo extends AbstractMojo {
         }
     }
 
-    protected final void setProxy(String downloadPath) throws URISyntaxException {
+    protected final void setProxy(URL downloadUrl) throws URISyntaxException {
         final String selectedProxyHost;
         final int selectedProxyPort;
 
@@ -255,11 +256,11 @@ public abstract class AbstractEventStoreMojo extends AbstractMojo {
         LOG.info("Used proxy: {host: " + selectedProxyHost + ", port: " + selectedProxyPort +
             ", user: " + selectedProxyUser + ", passwd: " + selectedProxyPassword + "}");
         addProxySelector(selectedProxyHost,
-            selectedProxyPort, selectedProxyUser, selectedProxyPassword, downloadPath);
+            selectedProxyPort, selectedProxyUser, selectedProxyPassword, downloadUrl);
     }
 
     private void addProxySelector(final String proxyHost, final int proxyPort, final String proxyUser,
-        final String proxyPassword, final String downloadPath) throws URISyntaxException {
+        final String proxyPassword, final URL downloadUrl) throws URISyntaxException {
 
         // Add authenticator with proxyUser and proxyPassword
         if (proxyUser != null && proxyPassword != null) {
@@ -272,7 +273,7 @@ public abstract class AbstractEventStoreMojo extends AbstractMojo {
         }
         final ProxySelector defaultProxySelector = ProxySelector.getDefault();
 
-        final URI downloadUri = new URI(downloadPath);
+        final URI downloadUri = downloadUrl.toURI();
 
         ProxySelector.setDefault(new ProxySelector() {
             @Override

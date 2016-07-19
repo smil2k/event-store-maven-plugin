@@ -84,13 +84,6 @@ public final class EventStoreDownloadMojo extends AbstractEventStoreMojo {
      */
     public final File getDownloadFile() throws MojoExecutionException {
         final String downloadUrl = getDownloadUrl();
-        if (isProxyIgnored() == false) {
-            try {
-                setProxy(downloadUrl);
-            } catch (URISyntaxException e) {
-                throw new MojoExecutionException("Failed to initialize the downloader: ", e);
-            }
-        }
         final String name = FilenameUtils.getName(downloadUrl);
         return new File(getEventStoreDir().getParentFile(), name);
     }
@@ -117,6 +110,13 @@ public final class EventStoreDownloadMojo extends AbstractEventStoreMojo {
                 final File tmpFile = new File(Utils4J.getTempDir(),
                         file.getName());
                 if (!tmpFile.exists()) {
+                    if (isProxyIgnored() == false) {
+                        try {
+                            setProxy(url);
+                        } catch (URISyntaxException e) {
+                            throw new MojoExecutionException("Failed to initialize the downloader: ", e);
+                        }
+                    }
                     download(url, tmpFile);
                     LOG.info("Archive downloaded to: " + tmpFile);
                 }

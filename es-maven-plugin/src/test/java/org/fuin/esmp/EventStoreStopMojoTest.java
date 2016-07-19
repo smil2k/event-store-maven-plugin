@@ -33,6 +33,7 @@ public class EventStoreStopMojoTest {
     @Before
     public void setup() throws MojoExecutionException {
         final EventStoreDownloadMojo testee = new EventStoreDownloadMojo();
+        testee.setProxyIgnored(false);
         testee.execute();
         final EventStoreStartMojo startMojo = new EventStoreStartMojo();
         startMojo.execute();

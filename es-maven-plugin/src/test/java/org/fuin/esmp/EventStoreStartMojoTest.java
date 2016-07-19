@@ -40,6 +40,7 @@ public class EventStoreStartMojoTest {
     @After
     public void tearDown() throws MojoExecutionException {
         final EventStoreStopMojo testee = new EventStoreStopMojo();
+        testee.setProxyIgnored(false);
         testee.execute();
     }
 

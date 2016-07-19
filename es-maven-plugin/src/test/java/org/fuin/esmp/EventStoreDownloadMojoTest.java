@@ -35,6 +35,7 @@ public class EventStoreDownloadMojoTest {
 
         // PREPARE
         final EventStoreDownloadMojo testee = new EventStoreDownloadMojo();
+        testee.setProxyIgnored(false);
         FileUtils.deleteQuietly(testee.getEventStoreDir());
         if (testee.getEventStoreDir().exists()) {
             throw new IllegalStateException("Couldn't delete: "
