@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -82,7 +83,15 @@ public final class EventStoreDownloadMojo extends AbstractEventStoreMojo {
      *             result.
      */
     public final File getDownloadFile() throws MojoExecutionException {
-        final String name = FilenameUtils.getName(getDownloadUrl());
+        final String downloadUrl = getDownloadUrl();
+        if (isProxyIgnored() == false) {
+            try {
+                setProxy(downloadUrl);
+            } catch (URISyntaxException e) {
+                throw new MojoExecutionException("Failed to initialize the downloader: ", e);
+            }
+        }
+        final String name = FilenameUtils.getName(downloadUrl);
         return new File(getEventStoreDir().getParentFile(), name);
     }
 

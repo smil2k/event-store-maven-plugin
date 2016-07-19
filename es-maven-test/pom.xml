@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.fuin.esmp</groupId>
 		<artifactId>es-maven-parent</artifactId>
-		<version>0.3.1</version>
+		<version>0.3.1-ZOLTAN_FIX</version>
 	</parent>
 
 	<artifactId>es-maven-test</artifactId>

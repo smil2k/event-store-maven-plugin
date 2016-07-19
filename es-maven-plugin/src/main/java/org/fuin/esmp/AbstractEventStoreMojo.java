@@ -17,16 +17,27 @@
  */
 package org.fuin.esmp;
 
+import static java.util.Collections.singletonList;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -95,6 +106,12 @@ public abstract class AbstractEventStoreMojo extends AbstractMojo {
     @Parameter(name = "event-store-dir")
     private File eventStoreDir;
 
+    @Parameter(name = "proxy-ignored", defaultValue = "true")
+    private boolean proxyIgnored;
+
+    @Parameter(defaultValue = "${session}")
+    private MavenSession mavenSession;
+    
     /**
      * Checks if a variable is not <code>null</code> and throws an
      * <code>IllegalNullArgumentException</code> if this rule is violated.
@@ -118,6 +135,7 @@ public abstract class AbstractEventStoreMojo extends AbstractMojo {
     public final void execute() throws MojoExecutionException {
         StaticLoggerBinder.getSingleton().setMavenLog(getLog());
         init();
+        LOG.info("proxy-ignored={}", proxyIgnored);
         LOG.info("download-url={}", downloadUrl);
         LOG.info("base-url={}", baseUrl);
         LOG.info("archive-name={}", archiveName);
@@ -206,6 +224,70 @@ public abstract class AbstractEventStoreMojo extends AbstractMojo {
             throw new MojoExecutionException("Error creating canonical file: "
                     + file, ex);
         }
+    }
+
+    protected final void setProxy(String downloadPath) throws URISyntaxException {
+        final String selectedProxyHost;
+        final int selectedProxyPort;
+
+        if (mavenSession != null
+            && mavenSession.getSettings().getActiveProxy() != null
+            && mavenSession.getSettings().getActiveProxy().getHost() != null) {
+            selectedProxyHost = mavenSession.getSettings().getActiveProxy().getHost();
+            selectedProxyPort = mavenSession.getSettings().getActiveProxy().getPort();
+        } else {
+            selectedProxyHost = null;
+            selectedProxyPort = 0;
+        }
+
+        final String selectedProxyUser;
+        final String selectedProxyPassword;
+        if (mavenSession != null
+            && mavenSession.getSettings().getActiveProxy() != null
+            && mavenSession.getSettings().getActiveProxy().getHost() != null) {
+            selectedProxyUser = mavenSession.getSettings().getActiveProxy().getUsername();
+            selectedProxyPassword = mavenSession.getSettings().getActiveProxy().getPassword();
+        } else {
+            selectedProxyUser = null;
+            selectedProxyPassword = null;
+        }
+
+        LOG.info("Used proxy: {host: " + selectedProxyHost + ", port: " + selectedProxyPort +
+            ", user: " + selectedProxyUser + ", passwd: " + selectedProxyPassword + "}");
+        addProxySelector(selectedProxyHost,
+            selectedProxyPort, selectedProxyUser, selectedProxyPassword, downloadPath);
+    }
+
+    private void addProxySelector(final String proxyHost, final int proxyPort, final String proxyUser,
+        final String proxyPassword, final String downloadPath) throws URISyntaxException {
+
+        // Add authenticator with proxyUser and proxyPassword
+        if (proxyUser != null && proxyPassword != null) {
+            Authenticator.setDefault(new Authenticator() {
+                @Override
+                public PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(proxyUser, proxyPassword.toCharArray());
+                }
+            });
+        }
+        final ProxySelector defaultProxySelector = ProxySelector.getDefault();
+
+        final URI downloadUri = new URI(downloadPath);
+
+        ProxySelector.setDefault(new ProxySelector() {
+            @Override
+            public List<Proxy> select(final URI uri) {
+                if (uri.getHost().equals(downloadUri.getHost()) && proxyHost != null && proxyHost.length() != 0) {
+                    return singletonList(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort)));
+                } else {
+                    return defaultProxySelector.select(uri);
+                }
+            }
+
+            @Override
+            public void connectFailed(final URI uri, final SocketAddress sa, final IOException ioe) {
+            }
+        });
     }
 
     /**
@@ -373,6 +455,14 @@ public abstract class AbstractEventStoreMojo extends AbstractMojo {
      */
     public final void setTargetDir(final File targetDir) {
         this.targetDir = targetDir;
+    }
+
+    public boolean isProxyIgnored() {
+        return proxyIgnored;
+    }
+
+    public void setProxyIgnored(boolean ignoreProxy) {
+        this.proxyIgnored = ignoreProxy;
     }
 
     /**

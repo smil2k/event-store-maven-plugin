@@ -60,7 +60,7 @@
 			<plugin>
 				<groupId>org.fuin.esmp</groupId>
 				<artifactId>es-maven-plugin</artifactId>
-				<version>0.3.1</version>
+				<version>0.3.1-ZOLTAN_FIX</version>
 				<executions>
 					<execution>
 						<goals>
@@ -68,6 +68,9 @@
 							<goal>start</goal>
 							<goal>stop</goal>
 						</goals>
+						<configuration>
+							<proxy-ignored>false</proxy-ignored>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
